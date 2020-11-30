@@ -1,0 +1,2011 @@
+
+#include <IRremote.h> 
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+ 
+#define LOGO16_GLCD_HEIGHT 16 //定义显示高度
+#define LOGO16_GLCD_WIDTH  16 //定义显示宽度
+//定义音符
+const int c3=262,c3s=277,d3=294,d3s=311,e3=330,f3=349,f3s=370,g3=392,g3s=415,a3=440,a3s=466,b3=494;
+const int c4=523,c4s=554,d4=587,d4s=622,e4=659,f4=698,f4s=740,g4=784,g4s=831,a4=880,a4s=932,b4=988;
+const int c5=1047,c5s=1109,d5=1175,d5s=1245,e5=1319,f5=1397,f5s=1480,g5=1568,g5s=1661,a5=1760,a5s=1865,b5=1976;
+const int c6=2093,c6s=2217,d6=2349,d6s=2489,e6=2637,f6=2794,f6s=2960,g6=3136,g6s=3322,a6=3520,a6s=3729,b6=3951;
+//定义每个音符的持续时间
+const int _1=1536,_2=768,_4=384,_8=192,_16=96,_32=48,_64=24;
+const int _1t=1024,_2t=512,_4t=256,_8t=128,_16t=64,_32t=32,_64t=16;
+const int _1d=2336,_2d=1168,_4d=584,_8d=292,_16d=146,_32d=73;
+const int PIN = 11;//接红外接口
+const int LED =13;//接灯
+int a=5;//喇叭的输出口
+IRrecv HW(PIN);//声明一个IRrecv类型的对象，并接到PIN，也就是11脚
+decode_results results;//声明一个decode_results类型的对象results,存放红外接收的信号解码结果
+static const unsigned char PROGMEM str_1[] =
+{ 
+0x01,0x00,0x21,0x08,0x11,0x08,0x09,0x10,0x09,0x20,0x01,0x00,0x7F,0xF8,0x00,0x08,
+0x00,0x08,0x00,0x08,0x3F,0xF8,0x00,0x08,0x00,0x08,0x00,0x08,0x7F,0xF8,0x00,0x08
+  };//当
+ 
+static const unsigned char PROGMEM str_2[] =
+{ 
+0x10,0x10,0x08,0x10,0x08,0x20,0xFF,0xFE,0x00,0x00,0x3E,0x08,0x22,0x48,0x22,0x48,
+0x3E,0x48,0x22,0x48,0x22,0x48,0x3E,0x48,0x22,0x08,0x22,0x08,0x2A,0x28,0x24,0x10
+  };//前
+ 
+static const unsigned char PROGMEM str_3[] =
+{ 
+0x20,0x78,0x27,0xC0,0x22,0x48,0x21,0x50,0xFB,0xFC,0x21,0x50,0x22,0x48,0x2C,0x06,
+0x33,0xF8,0xE2,0x48,0x22,0x48,0x23,0xF8,0x22,0x48,0x22,0x48,0xA3,0xF8,0x42,0x08
+  };
+static const unsigned char PROGMEM str_4[] =
+{ 
+0x20,0x40,0x10,0x40,0x00,0x40,0xFE,0x80,0x20,0xFE,0x21,0x08,0x3E,0x88,0x24,0x88,
+0x24,0x88,0x24,0x50,0x24,0x50,0x24,0x20,0x44,0x50,0x54,0x88,0x89,0x04,0x02,0x02
+  };
+
+static const unsigned char PROGMEM str_5[] =
+{ 
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x00,0x00,0x30,0x00,0x30,0x00,0x00,0x00,0x30,0x00,0x30,0x00,0x00,0x00,0x00,0x00
+
+};
+static const unsigned char PROGMEM str_6[] =
+{ 
+0x01,0x00,0x11,0x00,0x11,0x00,0x11,0x00,0x3F,0xFC,0x21,0x00,0x41,0x00,0x81,0x00,
+0x01,0x00,0x3F,0xF8,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0xFF,0xFE,0x00,0x00
+};
+static const unsigned char PROGMEM str_7[] =
+{ 
+0x00,0x00,0x1F,0xF0,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x1F,0xF0,
+0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x1F,0xF0,0x10,0x10
+
+
+};
+static const unsigned char PROGMEM str_8[] =
+{ 
+0x10,0x40,0x10,0x40,0x10,0x40,0x13,0xF8,0x18,0x48,0x54,0x48,0x50,0x48,0x50,0x48,
+0x97,0xFE,0x10,0x40,0x10,0xA0,0x10,0xA0,0x11,0x10,0x11,0x10,0x12,0x08,0x14,0x06
+
+};
+static const unsigned char PROGMEM str_9[] =
+{ 
+0x00,0x20,0x00,0xF0,0x1F,0x00,0x10,0x00,0x11,0x00,0x21,0x00,0x21,0x00,0x3F,0xFC,
+0x01,0x00,0x09,0x20,0x09,0x10,0x11,0x08,0x21,0x04,0x41,0x04,0x05,0x00,0x02,0x00
+
+};
+static const unsigned char PROGMEM str_10[] =
+{ 
+0x00,0x20,0xFF,0x20,0x02,0x20,0x7A,0x7E,0x4A,0x42,0x7A,0x84,0x00,0x10,0xFF,0x10,
+0x02,0x10,0x7A,0x10,0x4A,0x28,0x4A,0x28,0x7A,0x28,0x02,0x44,0x0A,0x44,0x04,0x82
+};
+static const unsigned char PROGMEM str_11[] =
+{ 
+0x11,0x10,0x11,0x10,0x17,0xFC,0x11,0x10,0xFC,0x00,0x13,0xF8,0x32,0x08,0x3B,0xF8,
+0x56,0x08,0x53,0xF8,0x90,0x40,0x17,0xFC,0x10,0xA0,0x11,0x10,0x12,0x08,0x14,0x06
+};
+static const unsigned char PROGMEM str_12[] =
+{ 
+0x00,0x48,0x00,0x44,0x00,0x44,0x00,0x40,0xFF,0xFE,0x00,0x40,0x00,0x40,0x3E,0x40,
+0x08,0x40,0x08,0x40,0x08,0x20,0x08,0x22,0x0F,0x12,0x78,0x0A,0x20,0x06,0x00,0x02
+};
+static const unsigned char PROGMEM str_13[] =
+{ 
+0x00,0x80,0x20,0x40,0x17,0xFC,0x14,0x04,0x80,0x00,0x43,0xF8,0x40,0x40,0x13,0xF8,
+0x12,0x48,0x23,0xF8,0xE2,0x48,0x23,0xF8,0x20,0x00,0x21,0x10,0x22,0x08,0x04,0x04
+};
+static const unsigned char PROGMEM str_14[] =
+{ 
+0x01,0x00,0x01,0x00,0x7F,0xFC,0x01,0x00,0x3F,0xF8,0x02,0x00,0xFF,0xFE,0x04,0x40,
+0x08,0x20,0x37,0xD8,0xC1,0x06,0x1F,0xF0,0x01,0x00,0x02,0xC0,0x0C,0x30,0x30,0x08
+};
+static const unsigned char PROGMEM str_15[] =
+{ 
+0x00,0x10,0x00,0xF8,0x3F,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0xFF,0xFE,
+0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00
+};
+static const unsigned char PROGMEM str_16[] =
+{ 
+0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x7F,0xFC,0x03,0x80,0x05,0x40,0x05,0x40,
+0x09,0x20,0x11,0x10,0x21,0x08,0x4F,0xE4,0x81,0x02,0x01,0x00,0x01,0x00,0x01,0x00
+};
+static const unsigned char PROGMEM str_17[] =
+{ 
+0x20,0x00,0x2F,0xBE,0x28,0xA2,0x2A,0xAA,0xFA,0xAA,0x2A,0xAA,0x25,0x14,0x78,0xA2,
+0x68,0x80,0xAF,0xFE,0xA1,0x10,0x22,0x10,0x23,0xA0,0x20,0x60,0x21,0x98,0x2E,0x04
+};
+//对第二首歌的每一个音符定义一个函数（节省空间）
+void a3_2(){
+tone(a,a3);delay(_2);}
+void a4_2(){
+tone(a,a4);delay(_2);}
+void a5_2(){
+tone(a,a5);delay(_2);}
+void a6_2(){
+tone(a,a6);delay(_2);}
+void a3_4(){
+tone(a,a3);delay(_4);}
+void a4_4(){
+tone(a,a4);delay(_4);}
+void a5_4(){
+tone(a,a5);delay(_4);}
+void a6_4(){
+tone(a,a6);delay(_4);}
+void a3_8(){
+tone(a,a3);delay(_8);}
+void a4_8(){
+tone(a,a4);delay(_8);}
+void a5_8(){
+tone(a,a5);delay(_8);}
+void a6_8(){
+tone(a,a6);delay(_8);}
+void a3_16(){
+tone(a,a3);delay(_16);}
+void a4_16(){
+tone(a,a4);delay(_16);}
+void a5_16(){
+tone(a,a5);delay(_16);}
+void a6_16(){
+tone(a,a6);delay(_16);}
+void b3_2(){
+tone(a,b3);delay(_2);}
+void b4_2(){
+tone(a,b4);delay(_2);}
+void b5_2(){
+tone(a,b5);delay(_2);}
+void b6_2(){
+tone(a,b6);delay(_2);}
+void b3_4(){
+tone(a,b3);delay(_4);}
+void b4_4(){
+tone(a,b4);delay(_4);}
+void b5_4(){
+tone(a,b5);delay(_4);}
+void b6_4(){
+tone(a,b6);delay(_4);}
+void b3_8(){
+tone(a,b3);delay(_8);}
+void b4_8(){
+tone(a,b4);delay(_8);}
+void b5_8(){
+tone(a,b5);delay(_8);}
+void b6_8(){
+tone(a,b6);delay(_8);}
+void b3_16(){
+tone(a,b3);delay(_16);}
+void b4_16(){
+tone(a,b4);delay(_16);}
+void b5_16(){
+tone(a,b5);delay(_16);}
+void b6_16(){
+tone(a,b6);delay(_16);}
+void c3_2(){
+tone(a,c3);delay(_2);}
+void c4_2(){
+tone(a,c4);delay(_2);}
+void c5_2(){
+tone(a,c5);delay(_2);}
+void c6_2(){
+tone(a,c6);delay(_2);}
+void c3_4(){
+tone(a,c3);delay(_4);}
+void c4_4(){
+tone(a,c4);delay(_4);}
+void c5_4(){
+tone(a,c5);delay(_4);}
+void c6_4(){
+tone(a,c6);delay(_4);}
+void c3_8(){
+tone(a,c3);delay(_8);}
+void c4_8(){
+tone(a,c4);delay(_8);}
+void c5_8(){
+tone(a,c5);delay(_8);}
+void c6_8(){
+tone(a,c6);delay(_8);}
+void c3_16(){
+tone(a,c3);delay(_16);}
+void c4_16(){
+tone(a,c4);delay(_16);}
+void c5_16(){
+tone(a,c5);delay(_16);}
+void c6_16(){
+tone(a,c6);delay(_16);}
+void d3_2(){
+tone(a,d3);delay(_2);}
+void d4_2(){
+tone(a,d4);delay(_2);}
+void d5_2(){
+tone(a,d5);delay(_2);}
+void d6_2(){
+tone(a,d6);delay(_2);}
+void d3_4(){
+tone(a,d3);delay(_4);}
+void d4_4(){
+tone(a,d4);delay(_4);}
+void d5_4(){
+tone(a,d5);delay(_4);}
+void d6_4(){
+tone(a,d6);delay(_4);}
+void d3_8(){
+tone(a,d3);delay(_8);}
+void d4_8(){
+tone(a,d4);delay(_8);}
+void d5_8(){
+tone(a,d5);delay(_8);}
+void d6_8(){
+tone(a,d6);delay(_8);}
+void d3_16(){
+tone(a,d3);delay(_16);}
+void d4_16(){
+tone(a,d4);delay(_16);}
+void d5_16(){
+tone(a,d5);delay(_16);}
+void d6_16(){
+tone(a,d6);delay(_16);}
+void e3_2(){
+tone(a,e3);delay(_2);}
+void e4_2(){
+tone(a,e4);delay(_2);}
+void e5_2(){
+tone(a,e5);delay(_2);}
+void e6_2(){
+tone(a,e6);delay(_2);}
+void e3_4(){
+tone(a,e3);delay(_4);}
+void e4_4(){
+tone(a,e4);delay(_4);}
+void e5_4(){
+tone(a,e5);delay(_4);}
+void e6_4(){
+tone(a,e6);delay(_4);}
+void e3_8(){
+tone(a,e3);delay(_8);}
+void e4_8(){
+tone(a,e4);delay(_8);}
+void e5_8(){
+tone(a,e5);delay(_8);}
+void e6_8(){
+tone(a,e6);delay(_8);}
+void e3_16(){
+tone(a,e3);delay(_16);}
+void e4_16(){
+tone(a,e4);delay(_16);}
+void e5_16(){
+tone(a,e5);delay(_16);}
+void e6_16(){
+tone(a,e6);delay(_16);}
+void f3_2(){
+tone(a,f3);delay(_2);}
+void f4_2(){
+tone(a,f4);delay(_2);}
+void f5_2(){
+tone(a,f5);delay(_2);}
+void f6_2(){
+tone(a,f6);delay(_2);}
+void f3_4(){
+tone(a,f3);delay(_4);}
+void f4_4(){
+tone(a,f4);delay(_4);}
+void f5_4(){
+tone(a,f5);delay(_4);}
+void f6_4(){
+tone(a,f6);delay(_4);}
+void f3_8(){
+tone(a,f3);delay(_8);}
+void f4_8(){
+tone(a,f4);delay(_8);}
+void f5_8(){
+tone(a,f5);delay(_8);}
+void f6_8(){
+tone(a,f6);delay(_8);}
+void f3_16(){
+tone(a,f3);delay(_16);}
+void f4_16(){
+tone(a,f4);delay(_16);}
+void f5_16(){
+tone(a,f5);delay(_16);}
+void f6_16(){
+tone(a,f6);delay(_16);}
+void g3_2(){
+tone(a,g3);delay(_2);}
+void g4_2(){
+tone(a,g4);delay(_2);}
+void g5_2(){
+tone(a,g5);delay(_2);}
+void g6_2(){
+tone(a,g6);delay(_2);}
+void g3_4(){
+tone(a,g3);delay(_4);}
+void g4_4(){
+tone(a,g4);delay(_4);}
+void g5_4(){
+tone(a,g5);delay(_4);}
+void g6_4(){
+tone(a,g6);delay(_4);}
+void g3_8(){
+tone(a,g3);delay(_8);}
+void g4_8(){
+tone(a,g4);delay(_8);}
+void g5_8(){
+tone(a,g5);delay(_8);}
+void g6_8(){
+tone(a,g6);delay(_8);}
+void g3_16(){
+tone(a,g3);delay(_16);}
+void g4_16(){
+tone(a,g4);delay(_16);}
+void g5_16(){
+tone(a,g5);delay(_16);}
+void g6_16(){
+tone(a,g6);delay(_16);}
+
+
+void a3_2d(){
+tone(a,a3);delay(_2d);}
+void a4_2d(){
+tone(a,a4);delay(_2d);}
+void a5_2d(){
+tone(a,a5);delay(_2d);}
+void a6_2d(){
+tone(a,a6);delay(_2d);}
+void a3_4d(){
+tone(a,a3);delay(_4d);}
+void a4_4d(){
+tone(a,a4);delay(_4d);}
+void a5_4d(){
+tone(a,a5);delay(_4d);}
+void a6_4d(){
+tone(a,a6);delay(_4d);}
+void a3_8d(){
+tone(a,a3);delay(_8d);}
+void a4_8d(){
+tone(a,a4);delay(_8d);}
+void a5_8d(){
+tone(a,a5);delay(_8d);}
+void a6_8d(){
+tone(a,a6);delay(_8d);}
+void a3_16d(){
+tone(a,a3);delay(_16d);}
+void a4_16d(){
+tone(a,a4);delay(_16d);}
+void a5_16d(){
+tone(a,a5);delay(_16d);}
+void a6_16d(){
+tone(a,a6);delay(_16d);}
+void b3_2d(){
+tone(a,b3);delay(_2d);}
+void b4_2d(){
+tone(a,b4);delay(_2d);}
+void b5_2d(){
+tone(a,b5);delay(_2d);}
+void b6_2d(){
+tone(a,b6);delay(_2d);}
+void b3_4d(){
+tone(a,b3);delay(_4d);}
+void b4_4d(){
+tone(a,b4);delay(_4d);}
+void b5_4d(){
+tone(a,b5);delay(_4d);}
+void b6_4d(){
+tone(a,b6);delay(_4d);}
+void b3_8d(){
+tone(a,b3);delay(_8d);}
+void b4_8d(){
+tone(a,b4);delay(_8d);}
+void b5_8d(){
+tone(a,b5);delay(_8d);}
+void b6_8d(){
+tone(a,b6);delay(_8d);}
+void b3_16d(){
+tone(a,b3);delay(_16d);}
+void b4_16d(){
+tone(a,b4);delay(_16d);}
+void b5_16d(){
+tone(a,b5);delay(_16d);}
+void b6_16d(){
+tone(a,b6);delay(_16d);}
+void c3_2d(){
+tone(a,c3);delay(_2d);}
+void c4_2d(){
+tone(a,c4);delay(_2d);}
+void c5_2d(){
+tone(a,c5);delay(_2d);}
+void c6_2d(){
+tone(a,c6);delay(_2d);}
+void c3_4d(){
+tone(a,c3);delay(_4d);}
+void c4_4d(){
+tone(a,c4);delay(_4d);}
+void c5_4d(){
+tone(a,c5);delay(_4d);}
+void c6_4d(){
+tone(a,c6);delay(_4d);}
+void c3_8d(){
+tone(a,c3);delay(_8d);}
+void c4_8d(){
+tone(a,c4);delay(_8d);}
+void c5_8d(){
+tone(a,c5);delay(_8d);}
+void c6_8d(){
+tone(a,c6);delay(_8d);}
+void c3_16d(){
+tone(a,c3);delay(_16d);}
+void c4_16d(){
+tone(a,c4);delay(_16d);}
+void c5_16d(){
+tone(a,c5);delay(_16d);}
+void c6_16d(){
+tone(a,c6);delay(_16d);}
+void d3_2d(){
+tone(a,d3);delay(_2d);}
+void d4_2d(){
+tone(a,d4);delay(_2d);}
+void d5_2d(){
+tone(a,d5);delay(_2d);}
+void d6_2d(){
+tone(a,d6);delay(_2d);}
+void d3_4d(){
+tone(a,d3);delay(_4d);}
+void d4_4d(){
+tone(a,d4);delay(_4d);}
+void d5_4d(){
+tone(a,d5);delay(_4d);}
+void d6_4d(){
+tone(a,d6);delay(_4d);}
+void d3_8d(){
+tone(a,d3);delay(_8d);}
+void d4_8d(){
+tone(a,d4);delay(_8d);}
+void d5_8d(){
+tone(a,d5);delay(_8d);}
+void d6_8d(){
+tone(a,d6);delay(_8d);}
+void d3_16d(){
+tone(a,d3);delay(_16d);}
+void d4_16d(){
+tone(a,d4);delay(_16d);}
+void d5_16d(){
+tone(a,d5);delay(_16d);}
+void d6_16d(){
+tone(a,d6);delay(_16d);}
+void e3_2d(){
+tone(a,e3);delay(_2d);}
+void e4_2d(){
+tone(a,e4);delay(_2d);}
+void e5_2d(){
+tone(a,e5);delay(_2d);}
+void e6_2d(){
+tone(a,e6);delay(_2d);}
+void e3_4d(){
+tone(a,e3);delay(_4d);}
+void e4_4d(){
+tone(a,e4);delay(_4d);}
+void e5_4d(){
+tone(a,e5);delay(_4d);}
+void e6_4d(){
+tone(a,e6);delay(_4d);}
+void e3_8d(){
+tone(a,e3);delay(_8d);}
+void e4_8d(){
+tone(a,e4);delay(_8d);}
+void e5_8d(){
+tone(a,e5);delay(_8d);}
+void e6_8d(){
+tone(a,e6);delay(_8d);}
+void e3_16d(){
+tone(a,e3);delay(_16d);}
+void e4_16d(){
+tone(a,e4);delay(_16d);}
+void e5_16d(){
+tone(a,e5);delay(_16d);}
+void e6_16d(){
+tone(a,e6);delay(_16d);}
+void f3_2d(){
+tone(a,f3);delay(_2d);}
+void f4_2d(){
+tone(a,f4);delay(_2d);}
+void f5_2d(){
+tone(a,f5);delay(_2d);}
+void f6_2d(){
+tone(a,f6);delay(_2d);}
+void f3_4d(){
+tone(a,f3);delay(_4d);}
+void f4_4d(){
+tone(a,f4);delay(_4d);}
+void f5_4d(){
+tone(a,f5);delay(_4d);}
+void f6_4d(){
+tone(a,f6);delay(_4d);}
+void f3_8d(){
+tone(a,f3);delay(_8d);}
+void f4_8d(){
+tone(a,f4);delay(_8d);}
+void f5_8d(){
+tone(a,f5);delay(_8d);}
+void f6_8d(){
+tone(a,f6);delay(_8d);}
+void f3_16d(){
+tone(a,f3);delay(_16d);}
+void f4_16d(){
+tone(a,f4);delay(_16d);}
+void f5_16d(){
+tone(a,f5);delay(_16d);}
+void f6_16d(){
+tone(a,f6);delay(_16d);}
+void g3_2d(){
+tone(a,g3);delay(_2d);}
+void g4_2d(){
+tone(a,g4);delay(_2d);}
+void g5_2d(){
+tone(a,g5);delay(_2d);}
+void g6_2d(){
+tone(a,g6);delay(_2d);}
+void g3_4d(){
+tone(a,g3);delay(_4d);}
+void g4_4d(){
+tone(a,g4);delay(_4d);}
+void g5_4d(){
+tone(a,g5);delay(_4d);}
+void g6_4d(){
+tone(a,g6);delay(_4d);}
+void g3_8d(){
+tone(a,g3);delay(_8d);}
+void g4_8d(){
+tone(a,g4);delay(_8d);}
+void g5_8d(){
+tone(a,g5);delay(_8d);}
+void g6_8d(){
+tone(a,g6);delay(_8d);}
+void g3_16d(){
+tone(a,g3);delay(_16d);}
+void g4_16d(){
+tone(a,g4);delay(_16d);}
+void g5_16d(){
+tone(a,g5);delay(_16d);}
+void g6_16d(){
+tone(a,g6);delay(_16d);}
+
+void a3_2t(){
+tone(a,a3);delay(_2t);}
+void a4_2t(){
+tone(a,a4);delay(_2t);}
+void a5_2t(){
+tone(a,a5);delay(_2t);}
+void a6_2t(){
+tone(a,a6);delay(_2t);}
+void a3_4t(){
+tone(a,a3);delay(_4t);}
+void a4_4t(){
+tone(a,a4);delay(_4t);}
+void a5_4t(){
+tone(a,a5);delay(_4t);}
+void a6_4t(){
+tone(a,a6);delay(_4t);}
+void a3_8t(){
+tone(a,a3);delay(_8t);}
+void a4_8t(){
+tone(a,a4);delay(_8t);}
+void a5_8t(){
+tone(a,a5);delay(_8t);}
+void a6_8t(){
+tone(a,a6);delay(_8t);}
+void a3_16t(){
+tone(a,a3);delay(_16t);}
+void a4_16t(){
+tone(a,a4);delay(_16t);}
+void a5_16t(){
+tone(a,a5);delay(_16t);}
+void a6_16t(){
+tone(a,a6);delay(_16t);}
+void b3_2t(){
+tone(a,b3);delay(_2t);}
+void b4_2t(){
+tone(a,b4);delay(_2t);}
+void b5_2t(){
+tone(a,b5);delay(_2t);}
+void b6_2t(){
+tone(a,b6);delay(_2t);}
+void b3_4t(){
+tone(a,b3);delay(_4t);}
+void b4_4t(){
+tone(a,b4);delay(_4t);}
+void b5_4t(){
+tone(a,b5);delay(_4t);}
+void b6_4t(){
+tone(a,b6);delay(_4t);}
+void b3_8t(){
+tone(a,b3);delay(_8t);}
+void b4_8t(){
+tone(a,b4);delay(_8t);}
+void b5_8t(){
+tone(a,b5);delay(_8t);}
+void b6_8t(){
+tone(a,b6);delay(_8t);}
+void b3_16t(){
+tone(a,b3);delay(_16t);}
+void b4_16t(){
+tone(a,b4);delay(_16t);}
+void b5_16t(){
+tone(a,b5);delay(_16t);}
+void b6_16t(){
+tone(a,b6);delay(_16t);}
+void c3_2t(){
+tone(a,c3);delay(_2t);}
+void c4_2t(){
+tone(a,c4);delay(_2t);}
+void c5_2t(){
+tone(a,c5);delay(_2t);}
+void c6_2t(){
+tone(a,c6);delay(_2t);}
+void c3_4t(){
+tone(a,c3);delay(_4t);}
+void c4_4t(){
+tone(a,c4);delay(_4t);}
+void c5_4t(){
+tone(a,c5);delay(_4t);}
+void c6_4t(){
+tone(a,c6);delay(_4t);}
+void c3_8t(){
+tone(a,c3);delay(_8t);}
+void c4_8t(){
+tone(a,c4);delay(_8t);}
+void c5_8t(){
+tone(a,c5);delay(_8t);}
+void c6_8t(){
+tone(a,c6);delay(_8t);}
+void c3_16t(){
+tone(a,c3);delay(_16t);}
+void c4_16t(){
+tone(a,c4);delay(_16t);}
+void c5_16t(){
+tone(a,c5);delay(_16t);}
+void c6_16t(){
+tone(a,c6);delay(_16t);}
+void d3_2t(){
+tone(a,d3);delay(_2t);}
+void d4_2t(){
+tone(a,d4);delay(_2t);}
+void d5_2t(){
+tone(a,d5);delay(_2t);}
+void d6_2t(){
+tone(a,d6);delay(_2t);}
+void d3_4t(){
+tone(a,d3);delay(_4t);}
+void d4_4t(){
+tone(a,d4);delay(_4t);}
+void d5_4t(){
+tone(a,d5);delay(_4t);}
+void d6_4t(){
+tone(a,d6);delay(_4t);}
+void d3_8t(){
+tone(a,d3);delay(_8t);}
+void d4_8t(){
+tone(a,d4);delay(_8t);}
+void d5_8t(){
+tone(a,d5);delay(_8t);}
+void d6_8t(){
+tone(a,d6);delay(_8t);}
+void d3_16t(){
+tone(a,d3);delay(_16t);}
+void d4_16t(){
+tone(a,d4);delay(_16t);}
+void d5_16t(){
+tone(a,d5);delay(_16t);}
+void d6_16t(){
+tone(a,d6);delay(_16t);}
+void e3_2t(){
+tone(a,e3);delay(_2t);}
+void e4_2t(){
+tone(a,e4);delay(_2t);}
+void e5_2t(){
+tone(a,e5);delay(_2t);}
+void e6_2t(){
+tone(a,e6);delay(_2t);}
+void e3_4t(){
+tone(a,e3);delay(_4t);}
+void e4_4t(){
+tone(a,e4);delay(_4t);}
+void e5_4t(){
+tone(a,e5);delay(_4t);}
+void e6_4t(){
+tone(a,e6);delay(_4t);}
+void e3_8t(){
+tone(a,e3);delay(_8t);}
+void e4_8t(){
+tone(a,e4);delay(_8t);}
+void e5_8t(){
+tone(a,e5);delay(_8t);}
+void e6_8t(){
+tone(a,e6);delay(_8t);}
+void e3_16t(){
+tone(a,e3);delay(_16t);}
+void e4_16t(){
+tone(a,e4);delay(_16t);}
+void e5_16t(){
+tone(a,e5);delay(_16t);}
+void e6_16t(){
+tone(a,e6);delay(_16t);}
+void f3_2t(){
+tone(a,f3);delay(_2t);}
+void f4_2t(){
+tone(a,f4);delay(_2t);}
+void f5_2t(){
+tone(a,f5);delay(_2t);}
+void f6_2t(){
+tone(a,f6);delay(_2t);}
+void f3_4t(){
+tone(a,f3);delay(_4t);}
+void f4_4t(){
+tone(a,f4);delay(_4t);}
+void f5_4t(){
+tone(a,f5);delay(_4t);}
+void f6_4t(){
+tone(a,f6);delay(_4t);}
+void f3_8t(){
+tone(a,f3);delay(_8t);}
+void f4_8t(){
+tone(a,f4);delay(_8t);}
+void f5_8t(){
+tone(a,f5);delay(_8t);}
+void f6_8t(){
+tone(a,f6);delay(_8t);}
+void f3_16t(){
+tone(a,f3);delay(_16t);}
+void f4_16t(){
+tone(a,f4);delay(_16t);}
+void f5_16t(){
+tone(a,f5);delay(_16t);}
+void f6_16t(){
+tone(a,f6);delay(_16t);}
+void g3_2t(){
+tone(a,g3);delay(_2t);}
+void g4_2t(){
+tone(a,g4);delay(_2t);}
+void g5_2t(){
+tone(a,g5);delay(_2t);}
+void g6_2t(){
+tone(a,g6);delay(_2t);}
+void g3_4t(){
+tone(a,g3);delay(_4t);}
+void g4_4t(){
+tone(a,g4);delay(_4t);}
+void g5_4t(){
+tone(a,g5);delay(_4t);}
+void g6_4t(){
+tone(a,g6);delay(_4t);}
+void g3_8t(){
+tone(a,g3);delay(_8t);}
+void g4_8t(){
+tone(a,g4);delay(_8t);}
+void g5_8t(){
+tone(a,g5);delay(_8t);}
+void g6_8t(){
+tone(a,g6);delay(_8t);}
+void g3_16t(){
+tone(a,g3);delay(_16t);}
+void g4_16t(){
+tone(a,g4);delay(_16t);}
+void g5_16t(){
+tone(a,g5);delay(_16t);}
+void g6_16t(){
+tone(a,g6);delay(_16t);}
+void a4s_8(){
+tone(a,a4s);delay(_8);}
+void a4s_4(){
+tone(a,a4s);delay(_4);}
+void a4s_16(){
+tone(a,a4s);delay(_16);}
+void a3s_16(){
+tone(a,a3s);delay(_16);}
+void a5s_16(){
+tone(a,a5s);delay(_16);}
+void c4s_4(){
+tone(a,c4s);delay(_4);}
+void c3s_16(){
+tone(a,c3s);delay(_16);}
+void g3s_16(){
+tone(a,g3s);delay(_16);}
+void c4s_16(){
+tone(a,c4s);delay(_16);}
+void f4s_16t(){
+tone(a,f4s);delay(_16t);}
+void f5s_16(){
+tone(a,f5s);delay(_16);}
+void f5s_16t(){
+tone(a,f5s);delay(_16t);}
+void f6s_16(){
+tone(a,f6s);delay(_16);}
+void no(){noTone(a);}
+//编写歌曲段落
+void A(){
+//13
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+//14
+f5_8();
+e5_16t();
+f5_16t();
+e5_16t();
+d5_8();
+c5_8();
+//15
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+//16
+g5_8();
+a5_8();
+c6_8();
+f6_8();
+e6_16();
+f6_16();
+e6_16();
+d6_16();
+c6_8();
+a5_8();
+//17
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+g5_8();
+a5_8();
+d5_16();
+c5_16();
+d5_16();
+c5_16();
+//18
+f5_8();
+e5_16t();
+f5_16t();
+e5_16t();
+d5_8();
+c5_8();
+//19
+g5_8();
+a5_16();
+c6_16();
+d6_16();
+c6_16();
+a5_16();
+g5_16();
+d5_8();
+f5_8();
+g5_8();
+a5_8();
+//20
+d5_8d();no();
+d5_8d();
+c5_8();
+d5_2();
+//21
+d4_4();no();
+d4_8d();
+c4_16();
+d4_8();
+f4_8();no();
+f4_8();
+g4_8();
+//22
+d4_4();no();
+d4_8d();
+c4_16();
+d4_8();
+c4_8();
+a3_8();
+c4_8();
+//23
+d4_4();no();
+d4_8d();
+c4_16();
+d4_8();
+f4_8();
+g4_8();
+a4_8();no();
+//24
+a4_4();
+g4_8t();
+a4_8t();
+g4_8t();
+f4_4();
+d4_4();no();
+//25
+d4_4();no();
+d4_8d();
+c4_16();
+d4_8();
+f4_8();no();
+f4_8();
+g4_8();
+//26
+d4_4();no();
+d4_8d();
+c4_16();
+d4_8();
+c4_8();no();
+c4_8();
+a3_8();
+//27
+d4_4();no();
+d4_8d();
+c4_16();no();
+c4_8();
+d4_8();
+f4_8();
+g4_8();
+//28
+a4_4();
+g4_8t();
+a4_8t();
+g4_8t();
+f4_4();
+d4_4();
+}
+
+
+void B(){
+//29
+f4_4();
+e4_4();
+d4_4();
+c4_4();no();
+//30
+c4_8();no();
+c4_16();
+d4_16();
+a3_8();
+g3_8();
+a3_2();no();
+//31
+a3_8();
+c4_8();
+d4_4();
+g4_4();
+e4_4();
+//32
+f4_4();
+e4_8();
+c4_8();
+d4_2();
+//33
+f4_4();
+e4_4();
+d4_4();
+c4_4();no();
+//34
+c4_8();no();
+c4_16();
+d4_16();
+a3_8();
+g3_8();
+a3_4();no();
+a3_8();
+c4_8();
+//35
+d4_8();no();
+d4_4();no();
+d4_8();
+f4_4();
+g4_4();
+//36
+e4_2d();
+d4_8();
+f4_8();
+//37
+g4_8d();no();
+g4_8d();
+a4_8();no();
+a4_4d();no();
+a4_8();
+//38
+c5_8();
+d5_8();
+g4_8();
+f4_8();
+a4_4();
+d4_8();
+f4_8();
+//39
+g4_8d();no();
+g4_8d();
+a4_8();no();
+a4_4d();no();
+a4_8();
+//40
+a4s_8();
+a4_8();
+g4_8();
+f4_8();no();
+f4_4();
+d4_8();
+f4_8();
+//41
+g4_8d();no();
+g4_8d();
+a4_8();no();
+a4_4d();no();
+a4_8();
+//42
+c5_8();
+d5_8();
+g4_8();
+f4_8();
+a4_4();
+d4_8();
+f4_8();
+//43
+a4s_4();
+a4_4();
+g4_4();
+f4_4();
+}
+
+
+void C(){
+//44
+g4_8();
+a4_8();
+e4_8();
+c4_8();
+d4_4();no();
+d4_8();
+f4_8();
+//45
+g4_8d();no();
+g4_8d();
+a4_8();no();
+a4_4d();no();
+a4_8();
+//46
+c5_8();
+d5_8();
+g4_8();
+f4_8();
+a4_4();
+d4_8();
+f4_8();
+//47
+g4_8d();no();
+g4_8d();
+a4_8();no();
+a4_4d();no();
+a4_8();
+//48
+a4s_8();
+a4_8();
+g4_8();
+f4_8();no();
+f4_4();
+d4_8();
+f4_8();
+//49
+g4_8d();no();
+g4_8d();
+a4_8();no();
+a4_4d();no();
+a4_8();
+//50
+c5_8();
+d5_8();
+g4_8();
+f4_8();
+a4_4();
+d4_8();
+f4_8();
+//51
+a4s_4();
+a4_4();
+g4_4();
+f4_4();
+//52
+g4_8();
+f4_8();
+a4_8();
+c5_8();
+d5_2();no();
+}
+
+
+void D(){
+//53
+d5_8();no();
+d5_8();no();
+d5_8();no();
+d5_8();no();
+d5_8();no();
+d5_8();no();
+d5_16();
+c5_16();
+a4_8();
+//54
+g4_8();no();
+g4_8();no();
+g4_8();no();
+g4_8();no();
+g4_8();no();
+g4_8();no();
+g4_16();
+f4_16();
+d4_8();no();
+//55
+d4_8();no();
+d4_8();no();
+d4_8();no();
+d4_8();no();
+d4_8();no();
+d4_8();no();
+d4_16();
+c4_16();
+a3_8();
+//56
+g3_8();
+a3_16();
+g3_16();
+a3_16();
+c4_16();
+d4_16();
+f4_16();
+a4_16();
+c5_16();
+d5_16();
+f5_16();
+e5_8();
+d4_16();
+f4_16();
+//57
+a4_16();
+f4_16();
+d4_16();
+a4_8();no();
+a4_16();
+f4_16();
+d4_16();
+a4_16();
+f4_16();
+d4_16();
+a4_8();no();
+a4_16();
+f4_16();
+d4_16();
+//58
+a4s_16();
+g4_16();
+e4_16();
+a4s_8();no();
+a4s_16();
+g4_16();
+e4_16();
+a4s_16();
+g4_16();
+e4_16();
+a4s_8();
+a4s_16();
+g4_16();
+e4_16();
+//59
+a4s_16();
+f4_16();
+d4_16();
+a4s_8();no();
+a4s_16();
+f4_16();
+d4_16();
+a4s_16();
+f4_16();
+d4_16();
+a4s_8();no();
+a4s_16();
+f4_16();
+d4_16();
+//60
+g4_16();
+e4_16();
+c4_16();
+g4_8();no();
+g4_16();
+e4_16();
+c4_16();
+a4_16();
+e4_16();
+c4_16();
+a4_8();no();
+a4_16();
+e4_16();
+c4_16();
+//61
+a4_16();
+f4_16();
+d4_16();
+a4_16();
+d5_16();
+a4_16();
+f4_16();
+d4_16();
+g4_16();
+f4_16();
+d4_16();
+a4_16();
+f5_16();
+d5_16();
+a4_16();
+f4_16();
+//62
+a4s_16();
+f4_16();
+d4_16();
+a4s_16();
+d5_16();
+a4s_16();
+f4_16();
+d4_16();
+a4s_16();
+f4_16();
+d4_16();
+a4s_16();
+f5_16();
+e5_16();
+d5_16();
+a4s_16();
+//63
+d5_16();
+a4s_16();
+f4_16();
+a4s_16();
+f5_16();
+a4s_16();
+d5_16();
+f5_16();
+a5s_16();
+f5_16();
+d5_16();
+a4s_16();
+a4s_16();
+f4_16();
+d4_16();
+a3s_16();
+//64
+c4_4();
+c3_16();
+e3_16();
+g3_16();
+c4_16();
+c4s_4();
+c3s_16();
+f3_16();
+g3s_16();
+c4s_16();
+//65
+g4_16();
+a4_16();
+f4_16();
+a4_16();
+g4_16();
+f4_16();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+c4_16();
+d4_16();no();
+d4_16();
+c4_16();
+a3_16();
+g3_16();
+//66
+a3_16();
+g3_16();
+f3_16();
+a3_16();
+g3_16();
+f3_16();
+e3_16();
+f3_16();
+d3_2();
+//67
+d3_8();
+e3_8();
+f3_8();
+a3_8();
+g3_16();
+a3_16();
+c4_16();
+e4_16();
+f4_16();
+e4_16();
+d4_16();
+f4_16();
+//68
+a4_4d();
+c5_8();
+a4_2();
+//69
+d3_8();
+c3_8();
+g3_8();
+f3_8();
+a3_8();
+g3_8();
+d4_8();
+c4_8();
+//70
+g4_8();
+f4_8();
+c5_16t();
+a4_16t();
+c5_16t();
+a4_16t();
+c5_16t();
+a4_16t();
+c5_2();
+//71
+f4_8();
+d4_16();
+a3s_16();
+f3_16();
+a3s_16();
+d4_16();
+f4_16();
+g4_8();
+e4_16();
+c4_16();
+g3_16();
+c4_16();
+e4_16();
+g4_16();
+//72
+a4_8d();
+g4_8d();
+a4_16();
+g4_16();
+a4_2();
+}
+
+
+void E(){
+//73
+g4_8();
+a4_8();
+g4_8();
+a4_8();no();
+a4_4();
+e4_8();
+g4_8();
+//74
+a4_8d();no();
+a4_8d();
+b4_8();no();
+b4_4d();no();
+b4_8();
+//75
+d5_8();
+e5_8();
+a4_8();
+g4_8();
+b4_4();
+e4_8();
+g4_8();
+//76
+a4_8d();no();
+a4_8d();
+b4_8();no();
+b4_4d();no();
+b4_8();
+//77
+c5_8();
+b4_8();
+a4_8();
+g4_8();no();
+g4_4();
+e4_8();
+g4_8();
+//78
+a4_8d();no();
+a4_8d();
+b4_8();no();
+b4_4d();no();
+b4_8();
+//79
+d5_8();
+e5_8();
+a4_8();
+g4_8();
+b4_4();
+e4_8();
+g4_8();
+//80
+c5_4();
+b4_4();
+a4_4();
+g4_4();
+//81
+a4_8();
+g4_8();
+b4_8();
+d5_8();
+e5_4();
+e4_8();
+g4_8();
+//82
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+//83
+g4_8();
+f4s_16t();
+g4_16t();
+f4s_16t();
+e4_8();
+d4_8();
+//84
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+//85
+a4_8();
+b4_8();
+d5_8();
+g5_8();
+f5s_16();
+g5_16();
+f5s_16();
+e5_16();
+d5_8();
+b4_8();
+//86
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+a4_8();
+b4_8();
+e4_16();
+d4_16();
+e4_16();
+d4_16();
+//87
+g4_8();
+f4s_16t();
+f4_16t();
+f4s_16t();
+e4_8();
+d4_8();
+//88
+e4_8();
+d4_16();
+e4_16();
+g4_8();
+e4_16();
+g4_16();
+a4_8();no();
+a4_16();
+b4_16();
+d5_16();
+g5_16();
+b4_16();
+d5_16();
+//89
+g5_8();
+f5s_16t();
+g5_16t();
+f5s_16t();
+e5_8();
+d5_8();
+e5_4();no();
+e5_8();
+g5_8();
+//90
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+//91
+g5_8();
+f5s_16t();
+g5_16t();
+f5s_16t();
+e5_8();
+d5_8();
+//92
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+//93
+a5_8();
+b5_8();
+d6_8();
+g6_8();
+f6s_16();
+g6_16();
+f6s_16();
+e6_16();
+d6_8();
+b5_8();
+//94
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+a5_8();
+b5_8();
+e5_16();
+d5_16();
+e5_16();
+d5_16();
+//95
+g5_8();
+f5s_16t();
+g5_16t();
+f5s_16t();
+e5_8();
+d5_8();
+//96
+a5_8();
+b5_16();
+d6_16();
+e6_16();
+d6_16();
+b5_16();
+a5_16();
+e5_8();
+g5_8();
+a5_8();
+b5_8();
+//97
+e5_8d();no();
+e5_8d();
+d5_8();
+e5_2();no();
+//98
+e5_8d();no();
+e5_8d();
+d5_8();
+e5_2();no();
+delay(_1);
+}
+
+void setup() {
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
+  display.setTextColor(WHITE);//开像素点发光
+  display.clearDisplay();
+  display.setTextSize(0.5); //设置字体大小
+  display.setCursor(0,0);//设置显示位置
+  display.println("Welcome");
+  display.display();
+  Serial.begin(9600);
+  pinMode(LED,OUTPUT);
+  HW.enableIRIn();//初始化红外接收设备
+
+}
+//第一首歌音符
+int melody[] = {
+g3,  
+g3,
+a3,
+g3,
+c4,
+b3,
+0,
+g3,
+g3,
+a3,
+g3,
+d4,
+c4,
+0,
+g3,
+g3,
+g4,
+e4,
+c4,
+b3,
+a3,
+0,
+f4,
+f4,
+e4,
+c4,
+d4,
+c4,
+0,
+};
+//第一首歌音符持续时间
+int noteDurations[] = {
+  8,8,4,4,4,4,
+  4,
+  8,8,4,4,4,4,
+  4,
+  8,8,4,4,4,4,2,
+  8,
+  8,8,4,4,4,2,
+  4,
+};
+
+//第一首歌主体函数
+void play()
+{
+    for (int thisNote = 0; thisNote < 29; thisNote++) {
+    int noteDuration = 1000/noteDurations[thisNote];
+    tone(5, melody[thisNote],noteDuration);   
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    noTone(8);
+  }
+}
+//第二首歌主体函数
+void play1()
+{d4_8d();no();
+d4_8d();
+c4_8();
+d4_8d();no();
+d4_8d();
+c4_8();
+//2
+d4_8d();no();
+d4_8d();
+c4_8();
+d4_4();
+f4_4();
+//3
+d4_8d();no();
+d4_8d();
+c4_8();
+d4_8d();no();
+d4_8d();
+c4_8();
+//4
+d4_4();
+f4_4();
+g4_4();
+a4_4();
+//5
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+//6
+f4_8();
+e4_16t();
+f4_16t();
+e4_16t();
+d4_8();
+c4_8();
+//7
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+//8
+g4_8();
+a4_8();
+c5_8();
+f5_8();
+e5_16();
+f5_16();
+e5_16();
+d5_16();
+c5_8();
+a4_8();
+//9
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+g4_8();
+a4_8();
+d4_16();
+c4_16();
+d4_16();
+c4_16();
+//10
+f4_8();
+e4_16t();
+f4_16t();
+e4_16t();
+d4_8();
+c4_8();
+//11
+d4_8();
+c4_16();
+d4_16();
+f4_8();
+d4_16();
+f4_16();
+g4_8();no();
+g4_16();
+a4_16();
+c5_16();
+f5_16();
+a4_16();
+c5_16();
+//12
+f5_8();
+e5_16t();
+f5_16t();
+e5_16t();
+d5_8();
+c5_8();
+d5_4();no();
+d5_8();
+f5_8();
+A();B();C();A();B();C();D();B();E();}
+
+void loop() {
+  if(HW.decode(&results))//如果接收到红外信号
+  { 
+    //清空OLED显示
+    display.clearDisplay();
+    display.display();
+    //串口显示红外信号
+    Serial.println(results.value,HEX);
+    //判断红外信号并执行
+    if((results.value)==0XFF6897||(results.value)==0XFF9867){
+       
+      display.drawBitmap(0, 0, str_1, 16, 16, 1);
+      display.drawBitmap(16, 0, str_2, 16, 16, 1); 
+      display.drawBitmap(32, 0, str_3, 16, 16, 1);
+      display.drawBitmap(48, 0, str_4, 16, 16, 1);
+      display.drawBitmap(64, 0, str_5, 16, 16, 1);
+      display.display();
+       if((results.value)==0XFF6897){
+      display.drawBitmap(0, 16, str_6, 16, 16, 1); 
+      display.drawBitmap(16, 16, str_7, 16, 16, 1); 
+      display.drawBitmap(32, 16, str_8, 16, 16, 1);
+      display.drawBitmap(48, 16, str_9, 16, 16, 1);
+      display.drawBitmap(64, 16, str_10, 16, 16, 1);
+      display.display();}
+      else
+      {
+        display.drawBitmap(0, 16, str_15, 16, 16, 1); 
+      display.drawBitmap(16, 16, str_16, 16, 16, 1); 
+      display.drawBitmap(32, 16, str_17, 16, 16, 1);
+      display.display();
+      }}
+   else 
+    {
+    display.clearDisplay();
+    display.display();
+    display.drawBitmap(0, 0, str_1, 16, 16, 1); 
+    display.drawBitmap(16, 0, str_2, 16, 16, 1); 
+    display.drawBitmap(32, 0, str_11, 16, 16, 1);
+    display.drawBitmap(48, 0, str_12, 16, 16, 1);
+    display.drawBitmap(64, 0, str_5, 16, 16, 1);
+    display.drawBitmap(0, 16, str_13, 16, 16, 1); 
+    display.drawBitmap(16, 16, str_14, 16, 16, 1); 
+    display.drawBitmap(32, 16, str_11, 16, 16, 1);
+    display.drawBitmap(48, 16, str_12, 16, 16, 1);
+    display.display();
+   }
+   switch(results.value)
+    {
+       case 0XFF6897:
+        digitalWrite(LED,HIGH);
+        play();
+        delay(300);
+        break;
+      case 0XFF9867:
+        digitalWrite(LED,HIGH);
+        play1();
+        noTone(a);
+        break;
+       case 0XFF30CF:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("do");
+        display.display();
+        tone(5,c3,300);
+        break;
+      case 0XFF18E7:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("re");
+        display.display();
+        tone(5,d3,300);
+        break;
+      case 0XFF7A85:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("mi");
+        display.display();
+        tone(5,e3,300);
+        break;
+      case 0XFF10EF:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("fa");
+        display.display();
+        tone(5,f3,300);
+        break;
+      case 0XFF38C7:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("sol");
+        display.display();
+        tone(5,g3,300);
+        break;
+      case 0XFF5AA5:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5);
+        display.setCursor(80,8);
+        display.println("la");
+        display.display();
+        tone(5,a3,300);
+        break;
+      case 0XFF42BD:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("xi");
+        display.display();
+        tone(5,b3,300);
+        break;
+      case 0XFF4AB5:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2); 
+        display.setCursor(86,-7);
+        display.println(".");
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("do");
+        display.display();
+        tone(5,c4,300);
+        break;
+      case 0XFF52AD:
+        digitalWrite(LED,HIGH);
+        display.setTextSize(2); 
+        display.setCursor(86,-7);
+        display.println(".");
+        display.setTextSize(2.5); 
+        display.setCursor(80,8);
+        display.println("re");
+        display.display();
+        tone(5,d4,300);
+        break;
+      default :
+      display.setTextSize(1.8); 
+        display.setCursor(80,8);
+        display.println("error");
+        display.display();
+        digitalWrite(LED,LOW);
+        delay(500);
+        break;
+    
+    
+  }
+    HW.resume();//接收下一个红外信号
+}
+}
